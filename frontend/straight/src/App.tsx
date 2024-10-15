@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import './App.css'
+import './App.css';
+import Camera from './components/Camera';
 
 function App() {
 
   return (
   <div>
-
+    <Camera />
   </div>
   )
 }
