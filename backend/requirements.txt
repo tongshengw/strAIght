@@ -1,2 +1,6 @@
 Flask
 Flask-sockets
+Flask-cors
+gunicorn
+gevent
+pillow

@@ -8,7 +8,7 @@ function Camera () {
     
     useEffect(() => {
     // Establish WebSocket connection to Flask backend
-        websocketRef.current = new WebSocket('ws://localhost:5000/screenshot');
+        websocketRef.current = new WebSocket('ws://localhost:8000/screenshot');
 
         websocketRef.current.onopen = () => {
         console.log('WebSocket connected');
@@ -33,7 +33,8 @@ function Camera () {
             const imageSrc = webcamRef.current.getScreenshot();
             if (imageSrc) {
             // Send the screenshot to the backend
-            websocketRef.current.send(imageSrc);
+                console.log(imageSrc)
+                websocketRef.current.send(imageSrc);
             }
         }
         }, 33); // Capture approximately 30 times per second
