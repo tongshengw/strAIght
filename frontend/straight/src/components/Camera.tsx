@@ -1,52 +1,18 @@
 import Webcam from "react-webcam";
-import { useRef, useEffect } from "react";
+import { socket } from "../socket";
 
-function Camera () {
-        
-    const webcamRef = useRef<Webcam>(null);
-    const websocketRef = useRef<WebSocket | null>(null);
-    
-    useEffect(() => {
-    // Establish WebSocket connection to Flask backend
-        websocketRef.current = new WebSocket('ws://localhost:8000/screenshot');
+function Camera ({ isConnected }: { isConnected: boolean }) {
 
-        websocketRef.current.onopen = () => {
-        console.log('WebSocket connected');
-        };
-
-        websocketRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
-        };
-
-    // Cleanup WebSocket on component unmount
-        return () => {
-        if (websocketRef.current) {
-            websocketRef.current.close();
-        }
-        };
-    }, []);
-
-
-    useEffect(() => {
-        const captureInterval = setInterval(() => {
-        if (webcamRef.current && websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-            const imageSrc = webcamRef.current.getScreenshot();
-            if (imageSrc) {
-            // Send the screenshot to the backend
-                console.log(imageSrc)
-                websocketRef.current.send(imageSrc);
-            }
-        }
-        }, 33); // Capture approximately 30 times per second
-
-        // Clear the interval on component unmount
-        return () => clearInterval(captureInterval);
-    }, []);
-
-
+    if (isConnected) {
+        setInterval(
+            function() {socket.emit("image", "!!!")},
+            1000
+        );
+    }
+   
     return (
         <>
-            <Webcam mirrored ref={webcamRef} screenshotFormat="image/jpeg"/> 
+            <Webcam mirrored screenshotFormat="image/jpeg"/> 
         </>
     );
 }
