@@ -11,7 +11,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     //     );
     // }
 
-    const webcamRef = useRef<Webcam | null>(null);
+    const webcamRef = useRef<any>(null);
     const capture = useCallback(
         () => {
           const imageSrc = webcamRef.current.getScreenshot();
@@ -22,7 +22,9 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
 
     if (isConnected) {
         setInterval(
-            function() {capture},
+            function() {
+                capture();
+            },
             1000
         );
     }

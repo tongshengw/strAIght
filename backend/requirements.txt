@@ -3,4 +3,4 @@ Flask-socketio
 Flask-cors
 gunicorn
 gevent
-pillow
+datauri
