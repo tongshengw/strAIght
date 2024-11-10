@@ -3,8 +3,7 @@ import { useRef, useCallback, useEffect } from "react";
 import { socket } from "../socket";
 import * as poseDetection from '@tensorflow-models/pose-detection'
 import '@tensorflow/tfjs-core'
-import '@tensorflow/tfjs-backend-webgl';
-import { sqrt } from "@tensorflow/tfjs-core";
+import '@tensorflow/tfjs-backend-webgl'
 
 function Camera ({ isConnected }: { isConnected: boolean }) {
 
@@ -102,7 +101,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         postureStats.eyeDistance = Math.sqrt((lEye.x-rEye.x)^2 + (lEye.y-rEye.y)^2);
         postureStats.shoulderDistance = Math.sqrt((lShoulder.x-rShoulder.x)^2 + (lShoulder.y-rShoulder.y)^2);
 
-        
+
     }
 
 
