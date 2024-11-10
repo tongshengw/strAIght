@@ -4,6 +4,7 @@ import { socket } from "../socket";
 import * as poseDetection from '@tensorflow-models/pose-detection'
 import '@tensorflow/tfjs-core'
 import '@tensorflow/tfjs-backend-webgl';
+import { sqrt } from "@tensorflow/tfjs-core";
 
 function Camera ({ isConnected }: { isConnected: boolean }) {
 
@@ -23,7 +24,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         const interval = setInterval(
             function() {
                 if (webcamRef.current) {
-                    console.log('image captured');
+                    // console.log('image captured');
                     capture();
                 }
             }, 1000);
@@ -32,6 +33,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     }, []);
 
     // function takes in datauri imageSrc string, converts into HTMLimage, then runs model inference
+    // this is the main function and calls others as helpers
     const runPoseEstimation = async (imageSrc: string) => {
         if (modelRef.current) {
             const img = new Image();
@@ -39,10 +41,9 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
             img.onload = async () => {
                 if (modelRef.current) {
                     const poses = await modelRef.current.estimatePoses(img);
-                    console.log(poses);
+                    // console.log(poses);
                     displayPose(poses);
-                    const postureData = processPoses(poses);
-                    return postureData;
+                    processPose(poses);
                 }
             }
             
@@ -75,9 +76,33 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     }
 
     
-    const processPoses = (poses: poseDetection.Pose[]) => {
+    const processPose = (poses: poseDetection.Pose[]) => {
         // add this function to process poses
-        return poses
+        let postureStats = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number };
+
+        const pose = poses[0];
+
+        const rEye = pose.keypoints[1];
+        const lEye = pose.keypoints[2];
+
+        const lShoulder = pose.keypoints[5];
+        const rShoulder = pose.keypoints[6];
+
+        const lEar = pose.keypoints[3];
+        const rEar = pose.keypoints[4];
+
+        const nose = pose.keypoints[0];
+
+        const eyeMidpoint = {"x": (lEye.x + rEye.x)/2, "y": (lEye.y + rEye.y)/2};
+        const shoulderMidpoint = {"x": (lShoulder.x + rShoulder.x)/2, "y": (lShoulder.y + rShoulder.y)/2};
+        const earMidpoint = {"x": (lEar.x + rEar.x)/2, "y": (lEar.y + rEar.y)/2};
+
+        postureStats.eyesShouldersY = shoulderMidpoint.y - eyeMidpoint.y;
+        postureStats.noseEarsY = nose.y - earMidpoint.y;
+        postureStats.eyeDistance = Math.sqrt((lEye.x-rEye.x)^2 + (lEye.y-rEye.y)^2);
+        postureStats.shoulderDistance = Math.sqrt((lShoulder.x-rShoulder.x)^2 + (lShoulder.y-rShoulder.y)^2);
+
+        
     }
 
 
