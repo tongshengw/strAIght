@@ -74,33 +74,46 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         }
     }
 
+    const calculateAngle = (lEye: poseDetection.Keypoint, rEye: poseDetection.Keypoint, lShoulder: poseDetection.Keypoint, rShoulder: poseDetection.Keypoint) => {
+        if (rEye.x - lEye.x == 0 || rShoulder.x - lShoulder.x == 0) {
+            return 0;
+        }
+        const eyeLineSlope = (rEye.y - lEye.y) / (rEye.x - lEye.x);
+        const shoulderLineSlope = (rShoulder.y - lShoulder.y) / (rShoulder.x - lShoulder.x);
+
+        const angle = Math.atan(Math.abs((eyeLineSlope - shoulderLineSlope) / (1 + eyeLineSlope*shoulderLineSlope)))
+
+        return angle;
+    }
     
     const processPose = (poses: poseDetection.Pose[]) => {
         // add this function to process poses
-        let postureStats = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number };
+        let ps = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number; eyeShoulderAngle: number; eyesNoseDistanceDiff: number };
 
         const pose = poses[0];
 
         const rEye = pose.keypoints[1];
         const lEye = pose.keypoints[2];
-
         const lShoulder = pose.keypoints[5];
         const rShoulder = pose.keypoints[6];
-
         const lEar = pose.keypoints[3];
         const rEar = pose.keypoints[4];
-
         const nose = pose.keypoints[0];
 
-        const eyeMidpoint = {"x": (lEye.x + rEye.x)/2, "y": (lEye.y + rEye.y)/2};
-        const shoulderMidpoint = {"x": (lShoulder.x + rShoulder.x)/2, "y": (lShoulder.y + rShoulder.y)/2};
-        const earMidpoint = {"x": (lEar.x + rEar.x)/2, "y": (lEar.y + rEar.y)/2};
+        const eyeMidpoint = { x: (lEye.x + rEye.x) / 2, y: (lEye.y + rEye.y) / 2 };
+        const shoulderMidpoint = { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 };
+        const earMidpoint = { x: (lEar.x + rEar.x) / 2, y: (lEar.y + rEar.y) / 2 };
+        const lEarNoseDist = Math.abs(lEye.x - nose.x);
+        const rEarNoseDist = Math.abs(rEye.x - nose.x);
 
-        postureStats.eyesShouldersY = shoulderMidpoint.y - eyeMidpoint.y;
-        postureStats.noseEarsY = nose.y - earMidpoint.y;
-        postureStats.eyeDistance = Math.sqrt((lEye.x-rEye.x)^2 + (lEye.y-rEye.y)^2);
-        postureStats.shoulderDistance = Math.sqrt((lShoulder.x-rShoulder.x)^2 + (lShoulder.y-rShoulder.y)^2);
-
+        ps.eyesShouldersY = shoulderMidpoint.y - eyeMidpoint.y;
+        ps.noseEarsY = nose.y - earMidpoint.y;
+        ps.eyeDistance = Math.sqrt((lEye.x-rEye.x)**2 + (lEye.y-rEye.y)**2);
+        ps.shoulderDistance = Math.sqrt((lShoulder.x-rShoulder.x)**2 + (lShoulder.y-rShoulder.y)**2);
+        ps.eyeShoulderAngle = calculateAngle(lEye, rEye, lShoulder, rShoulder);
+        ps.eyesNoseDistanceDiff = lEarNoseDist - rEarNoseDist;
+        if (lEarNoseDist < rEarNoseDist) {ps.eyesNoseDistanceDiff = -ps.eyesNoseDistanceDiff}
+        console.log(ps.eyesNoseDistanceDiff);
 
     }
 
