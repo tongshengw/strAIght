@@ -12,6 +12,8 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
+    let ps = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number; eyeShoulderAngle: number; eyesNoseDistanceDiff: number, rawData:poseDetection.Pose};
+
     // useEffect with [] as second parameter means the code is run once at initial render time
     useEffect(() => {
         const loadModel = async () => {
@@ -31,6 +33,39 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         return () => clearInterval(interval);
     }, []);
 
+    const handleKeyDown = (k: KeyboardEvent) => {
+        switch (k.key) {
+            case 'n':
+                sendInfo(true, isConnected);
+                break;
+            case 'm':
+                sendInfo(false, isConnected);
+                break;
+        }
+    }
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {document.removeEventListener('keydown', handleKeyDown)};
+    }, []);
+
+    const sendInfo = (posture: boolean, isConnected: boolean) =>{
+        if (isConnected) {
+            if (posture && ps.eyesShouldersY) {
+                socket.emit('training', {pos: 0, dat: ps});
+                console.log('good posture example sent');
+            } else {
+                socket.emit('training', {pos: 1, dat: ps});
+                console.log('bad posture example sent');
+            }
+        } else {
+            console.log('server not connected');
+        }
+    }
+    
+
+
     // function takes in datauri imageSrc string, converts into HTMLimage, then runs model inference
     // this is the main function and calls others as helpers
     const runPoseEstimation = async (imageSrc: string) => {
@@ -41,14 +76,17 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
                 if (modelRef.current) {
                     const poses = await modelRef.current.estimatePoses(img);
                     // console.log(poses);
-                    displayPose(poses);
-                    processPose(poses);
+                    if (poses) {
+                        displayPose(poses);
+                        processPose(poses);
+                    }
                 }
             }
             
         }
         return null;
     }
+
 
     const displayPose = (poses: poseDetection.Pose[]) => {
         const canvas = canvasRef.current;
@@ -74,6 +112,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         }
     }
 
+
     const calculateAngle = (lEye: poseDetection.Keypoint, rEye: poseDetection.Keypoint, lShoulder: poseDetection.Keypoint, rShoulder: poseDetection.Keypoint) => {
         if (rEye.x - lEye.x == 0 || rShoulder.x - lShoulder.x == 0) {
             return 0;
@@ -86,11 +125,14 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         return angle;
     }
     
+
     const processPose = (poses: poseDetection.Pose[]) => {
         // add this function to process poses
-        let ps = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number; eyeShoulderAngle: number; eyesNoseDistanceDiff: number };
 
         const pose = poses[0];
+        if (!pose) {return}
+
+        ps.rawData = pose;
 
         const rEye = pose.keypoints[1];
         const lEye = pose.keypoints[2];
@@ -103,17 +145,15 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         const eyeMidpoint = { x: (lEye.x + rEye.x) / 2, y: (lEye.y + rEye.y) / 2 };
         const shoulderMidpoint = { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 };
         const earMidpoint = { x: (lEar.x + rEar.x) / 2, y: (lEar.y + rEar.y) / 2 };
-        const lEarNoseDist = Math.abs(lEye.x - nose.x);
-        const rEarNoseDist = Math.abs(rEye.x - nose.x);
+        const lEarNoseDist = Math.sqrt((lEar.x - nose.x) ** 2 + (lEar.y - nose.y) ** 2);
+        const rEarNoseDist = Math.sqrt((rEar.x - nose.x) ** 2 + (rEar.y - nose.y) ** 2);
 
         ps.eyesShouldersY = shoulderMidpoint.y - eyeMidpoint.y;
         ps.noseEarsY = nose.y - earMidpoint.y;
-        ps.eyeDistance = Math.sqrt((lEye.x-rEye.x)**2 + (lEye.y-rEye.y)**2);
-        ps.shoulderDistance = Math.sqrt((lShoulder.x-rShoulder.x)**2 + (lShoulder.y-rShoulder.y)**2);
+        ps.eyeDistance = Math.sqrt((lEye.x - rEye.x) ** 2 + (lEye.y - rEye.y) ** 2);
+        ps.shoulderDistance = Math.sqrt((lShoulder.x - rShoulder.x) ** 2 + (lShoulder.y - rShoulder.y) ** 2);
         ps.eyeShoulderAngle = calculateAngle(lEye, rEye, lShoulder, rShoulder);
-        ps.eyesNoseDistanceDiff = lEarNoseDist - rEarNoseDist;
-        if (lEarNoseDist < rEarNoseDist) {ps.eyesNoseDistanceDiff = -ps.eyesNoseDistanceDiff}
-        console.log(ps.eyesNoseDistanceDiff);
+        ps.eyesNoseDistanceDiff = (lEarNoseDist - rEarNoseDist) / (lEarNoseDist + rEarNoseDist);
 
     }
 
@@ -123,7 +163,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
             const imageSrc: string = webcamRef.current.getScreenshot();
             runPoseEstimation(imageSrc);
             if (isConnected) {
-            socket.emit("image", imageSrc);
+                socket.emit("image", imageSrc);
             }
         },
         [webcamRef]

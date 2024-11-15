@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 from flask_cors import CORS
 from datauri import DataURI
 import base64
+import csv
 
 app = Flask(__name__)
 CORS(app)
@@ -19,11 +20,14 @@ def handle_image(data):
     with open(filename, 'wb') as f:
         f.write(imgdata)
 
+@socketio.on('training')
+def handle_training_data(data):
+    print(data)
+
 @socketio.on("connect")
 def connected():
     """event listener when client connects to the server"""
     print("client has connected")
 
-
 if __name__ == "__main__":
-    socketio.run(app, debug = True, port=8000)
+    socketio.run(app, debug = True, port=8080)
