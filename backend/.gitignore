@@ -1,7 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/flask,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=flask,python
-
+*.out
 test_image.jpg
+test*.csv
 
 ### Flask ###
 instance/*
