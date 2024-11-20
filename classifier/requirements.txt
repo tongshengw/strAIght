@@ -1,1 +1,6 @@
 keras
+ipykernel
+matplotlib
+scikit-learn
+pandas
+tensorflow

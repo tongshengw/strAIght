@@ -14,6 +14,7 @@ printed = False
 
 @socketio.on('image')
 def handle_image(data):
+    # printed is a debugging var to only print data once
     global printed
     uri = DataURI(data)
     imgdata = uri.data
@@ -33,6 +34,7 @@ def connected():
     print("client has connected")
 
 def write_to_csv(data):
+    print("data recieved")
     with open('test1.csv', 'a', newline='') as csvfile:
         fieldnames = ['pos', 'eyeDistance', 'shoulderDistance', 'eyeShoulderAngle', 'eyesNoseDistanceDiff', 'eyesShouldersY', 'noseEarsY', 'rawData']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -54,4 +56,4 @@ def write_to_csv(data):
         })
 
 if __name__ == "__main__":
-    socketio.run(app, debug = True, port=8080)
+    socketio.run(app, debug = True, port=8081)

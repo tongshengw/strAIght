@@ -36,10 +36,10 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     const handleKeyDown = (k: KeyboardEvent) => {
         switch (k.key) {
             case 'n':
-                sendInfo(true, isConnected);
+                sendInfo(true);
                 break;
             case 'm':
-                sendInfo(false, isConnected);
+                sendInfo(false);
                 break;
         }
     }
@@ -50,7 +50,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         return () => {document.removeEventListener('keydown', handleKeyDown)};
     }, []);
 
-    const sendInfo = (posture: boolean, isConnected: boolean) =>{
+    const sendInfo = (posture: boolean) =>{
         if (isConnected) {
             if (posture && ps.eyesShouldersY) {
                 socket.emit('training', {pos: 0, dat: ps});
@@ -172,6 +172,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
    
     return (
         <>
+        <div>Training mode: n for good pose, m for bad pose</div>
         <div ref = {wrapperRef} className="cameraWrapper" style={{position: 'relative'}}>
             <Webcam mirrored ref={webcamRef} screenshotFormat="image/jpeg"/>
             <canvas ref={canvasRef} style={{position: 'absolute', top: 0, left: 0}}/>
