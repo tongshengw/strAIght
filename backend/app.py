@@ -26,7 +26,6 @@ def handle_image(data):
 def handle_training_data(data):
     # print(data['dat']['rawData'])
     write_to_csv(data)
-    print(data)
 
 @socketio.on("connect")
 def connected():
