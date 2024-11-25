@@ -2,6 +2,7 @@ import Webcam from "react-webcam";
 import { useRef, useCallback, useEffect } from "react";
 import { socket } from "../socket";
 import * as poseDetection from '@tensorflow-models/pose-detection'
+import * as tf from '@tensorflow/tfjs'
 import '@tensorflow/tfjs-core'
 import '@tensorflow/tfjs-backend-webgl'
 
@@ -11,6 +12,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     const modelRef = useRef<poseDetection.PoseDetector | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const classificationRef = useRef<tf.LayersModel | null>(null);
 
     let ps = {} as { eyesShouldersY: number; noseEarsY: number; eyeDistance: number; shoulderDistance: number; eyeShoulderAngle: number; eyesNoseDistanceDiff: number, rawData:poseDetection.Pose};
 
@@ -21,9 +23,14 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
             modelRef.current = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
         }
         loadModel();
+            
+        const loadClassification = async () => {
+            classificationRef.current = await tf.loadLayersModel('http://localhost:8081/static/model.json', {strict:false});
+        }
+        loadClassification();
 
         const interval = setInterval(
-            function() {
+            () => {
                 if (webcamRef.current) {
                     // console.log('image captured');
                     capture();
@@ -79,12 +86,29 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
                     if (poses) {
                         displayPose(poses);
                         processPose(poses);
+                        poseClassification();
                     }
                 }
             }
             
         }
         return null;
+    }
+
+    const poseClassification = async () => {
+        // const keysToKeep = ['eyesShouldersY', 'noseEarsY', 'eyeDistance', 'shoulderDistance', 'eyeShoulderAngle', 'eyesNoseDistanceDiff'];
+        // const inputObject = Object.fromEntries(
+        //     Object.entries(ps).filter(([key]) => keysToKeep.includes(key))
+        // );
+
+        const inputTensor = tf.tensor2d([[ps.eyesShouldersY, ps.noseEarsY, ps.eyeDistance, ps.shoulderDistance, ps.eyeShoulderAngle, ps.eyesNoseDistanceDiff]]);
+        const test = [ps.eyesShouldersY, ps.noseEarsY, ps.eyeDistance, ps.shoulderDistance, ps.eyeShoulderAngle, ps.eyesNoseDistanceDiff];
+
+        if (classificationRef.current) {
+            const prediction = classificationRef.current.predict(tf.tensor(test, [1,6]));
+            const predictedLabels = (await prediction.data()).map(prob => prob >= 0.5 ? 1 : 0);
+            console.log(predictedLabels);
+        }
     }
 
 

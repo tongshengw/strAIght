@@ -15,6 +15,7 @@ printed = False
 @socketio.on('image')
 def handle_image(data):
     # printed is a debugging var to only print data once
+    print("recieved")
     global printed
     uri = DataURI(data)
     imgdata = uri.data
