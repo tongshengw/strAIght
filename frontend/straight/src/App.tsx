@@ -1,4 +1,4 @@
-import Camera from './components/Camera';
+import ContentArea from './components/ContentArea';
 import { useState, useEffect } from 'react';
 import { socket } from './socket';
 
@@ -32,9 +32,11 @@ function App() {
   }, []);
 
   return (
-  <div>
-    <Camera isConnected={ isConnected } />
-  </div>
+  <>
+    <div className="w-screen h-screen">
+      <ContentArea isConnected = {isConnected} />
+    </div>
+  </>
   )
 }
 

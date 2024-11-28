@@ -5,8 +5,9 @@ import * as poseDetection from '@tensorflow-models/pose-detection'
 import * as tf from '@tensorflow/tfjs'
 import '@tensorflow/tfjs-core'
 import '@tensorflow/tfjs-backend-webgl'
+import { constants } from "../constants";
 
-function Camera ({ isConnected }: { isConnected: boolean }) {
+function Camera ({ isConnected, setPostureScore }: { isConnected: boolean, setPostureScore: (score: number) => void }) {
 
     const webcamRef = useRef<any>(null);
     const modelRef = useRef<poseDetection.PoseDetector | null>(null);
@@ -103,11 +104,13 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
                 const prediction = await (classificationRef.current.predict(tf.tensor(test, [1,6])) as tf.Tensor).data();
                 const score = prediction[0];
 
-                if (score >= 0.5) {
+                if (score >= constants.postureThreshold) {
                     console.log("bad posture");
                 } else {
                     console.log("good posture");
                 }
+
+                setPostureScore(score);
             }
         }
     }
@@ -197,10 +200,12 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
    
     return (
         <>
-        <div>Training mode: n for good pose, m for bad pose</div>
-        <div ref = {wrapperRef} className="cameraWrapper" style={{position: 'relative'}}>
-            <Webcam mirrored ref={webcamRef} screenshotFormat="image/jpeg"/>
-            <canvas ref={canvasRef} style={{position: 'absolute', top: 0, left: 0}}/>
+        <div className="w-full h-full">
+            <div>Training mode: n for good pose, m for bad pose</div>
+            <div ref = {wrapperRef} className="" style={{position: 'relative'}}>
+                <Webcam mirrored ref={webcamRef} screenshotFormat="image/jpeg"/>
+                <canvas ref={canvasRef} style={{position: 'absolute', top: 0, left: 0}}/>
+            </div>
         </div>
         </>
     );
