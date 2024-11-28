@@ -25,7 +25,7 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
         loadModel();
             
         const loadClassification = async () => {
-            classificationRef.current = await tf.loadLayersModel('http://localhost:8081/static/model.json', {strict:false});
+            classificationRef.current = await tf.loadLayersModel('http://localhost:8081/static/model.json', {strict:true});
         }
         loadClassification();
 
@@ -96,18 +96,19 @@ function Camera ({ isConnected }: { isConnected: boolean }) {
     }
 
     const poseClassification = async () => {
-        // const keysToKeep = ['eyesShouldersY', 'noseEarsY', 'eyeDistance', 'shoulderDistance', 'eyeShoulderAngle', 'eyesNoseDistanceDiff'];
-        // const inputObject = Object.fromEntries(
-        //     Object.entries(ps).filter(([key]) => keysToKeep.includes(key))
-        // );
+        if (ps.eyeDistance && ps.rawData['keypoints'][0]['score'] && ps.rawData['keypoints'][0]['score'] > 0.3) {
+            const test = [ps.eyeDistance, ps.shoulderDistance, ps.eyeShoulderAngle, ps.eyesNoseDistanceDiff, ps.eyesShouldersY, ps.noseEarsY];
 
-        const inputTensor = tf.tensor2d([[ps.eyesShouldersY, ps.noseEarsY, ps.eyeDistance, ps.shoulderDistance, ps.eyeShoulderAngle, ps.eyesNoseDistanceDiff]]);
-        const test = [ps.eyesShouldersY, ps.noseEarsY, ps.eyeDistance, ps.shoulderDistance, ps.eyeShoulderAngle, ps.eyesNoseDistanceDiff];
+            if (classificationRef.current) {
+                const prediction = await (classificationRef.current.predict(tf.tensor(test, [1,6])) as tf.Tensor).data();
+                const score = prediction[0];
 
-        if (classificationRef.current) {
-            const prediction = classificationRef.current.predict(tf.tensor(test, [1,6]));
-            const predictedLabels = (await prediction.data()).map(prob => prob >= 0.5 ? 1 : 0);
-            console.log(predictedLabels);
+                if (score >= 0.5) {
+                    console.log("bad posture");
+                } else {
+                    console.log("good posture");
+                }
+            }
         }
     }
 
